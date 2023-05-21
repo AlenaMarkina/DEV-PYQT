@@ -1,1 +1,1 @@
-# DEV-PYQT
+# DEV-PYQT. Home work.
