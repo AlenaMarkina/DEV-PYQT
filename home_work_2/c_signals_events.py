@@ -8,14 +8,14 @@
 
 +- 2. Возможность получения параметров экрана (вывод производить в plainTextEdit + добавлять время).
     * Кол-во экранов    +
-    * Текущее основное окно    +  # TODO: может экан, а не окно ?
+    * Текущее основное окно    +
     * Разрешение экрана    +
     * На каком экране окно находится    -
     * Размеры окна  +
     * Минимальные размеры окна  +
     * Текущее положение (координаты) окна   +
     * Координаты центра приложения  +
-    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)  -
+    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)  +-
 
 - 3. Возможность отслеживания состояния окна (вывод производить в консоль + добавлять время).
     * При перемещении окна выводить его старую и новую позицию
@@ -183,7 +183,6 @@ class Window(QtWidgets.QWidget):
         window_center_x, window_center_y = self.appCenterPos()
         log_list.append(f'Координаты центра приложения:  ({window_center_x}, {window_center_x})')
 
-        # TODO: не доделала !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         window_state = self.windowCurrentState()
         log_list.append(f'Отслеживание состояния окна:  {window_state}')
 
@@ -196,7 +195,7 @@ class Window(QtWidgets.QWidget):
 
         :return: int
         """
-        
+
         return len(QGuiApplication.screens())
 
     def currentScreen(self) -> str:
@@ -279,16 +278,22 @@ class Window(QtWidgets.QWidget):
 
         return center_x, center_y
 
+    # TODO: мне кажется неправильно сделала!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     def windowCurrentState(self):
         """
         Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)
 
         :return:
         """
-        print()
-        print(self.windowState().name)
-        print()
-        return 'НЕ ДОДЕЛАЛА windowCurrentState() !!!!'
+
+        if self.isFullScreen():
+            return 'развёрнуто'
+        elif self.isActiveWindow():
+            return 'активно'
+        elif self.isVisible():
+            return 'отображено'
+        elif self.isMinimized():
+            return 'свернуто'
 
 
 if __name__ == "__main__":
