@@ -4,8 +4,9 @@
 
 Программа должна обладать следующим функционалом:
 
-+- 1. Возможность перемещения окна по заданным координатам.
-- 2. Возможность получения параметров экрана (вывод производить в plainTextEdit + добавлять время).
++ 1. Возможность перемещения окна по заданным координатам.
+
++- 2. Возможность получения параметров экрана (вывод производить в plainTextEdit + добавлять время).
     * Кол-во экранов    +
     * Текущее основное окно    +  # TODO: может экан, а не окно ?
     * Разрешение экрана    +
@@ -13,17 +14,19 @@
     * Размеры окна  +
     * Минимальные размеры окна  +
     * Текущее положение (координаты) окна   +
-    * Координаты центра приложения  -
-    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)
+    * Координаты центра приложения  +
+    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)  -
+
 - 3. Возможность отслеживания состояния окна (вывод производить в консоль + добавлять время).
     * При перемещении окна выводить его старую и новую позицию
     * При изменении размера окна выводить его новый размер
 """
 
+from time import ctime
+from typing import Tuple
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtGui import QScreen
+from PySide6.QtGui import QGuiApplication, QWindow
 
 from home_work_2.ui.c_signals_events import Ui_Form
 
@@ -55,9 +58,85 @@ class Window(QtWidgets.QWidget):
         :return: None
         """
 
+        self.ui.pushButtonLT.clicked.connect(self.onPushButtonLT)
+        self.ui.pushButtonRT.clicked.connect(self.onPushButtonRT)
+        self.ui.pushButtonCenter.clicked.connect(self.onPushButtonCenter)
+        self.ui.pushButtonLB.clicked.connect(self.onPushButtonLB)
+        self.ui.pushButtonRB.clicked.connect(self.onPushButtonRB)
+
         self.ui.pushButtonMoveCoords.clicked.connect(self.onPushButtonMoveCoordsClicked)
         self.ui.pushButtonGetData.clicked.connect(self.onPushButtonGetDataClicked)
 
+    # slots --------------------------------------------------------------
+    def onPushButtonLT(self) -> None:
+        """
+        Обработка сигнала 'clicked' для кнопки pushButtonLT
+
+        :return: None
+        """
+        x, y = 0, 0
+
+        self.move(x, y)
+
+    def onPushButtonRT(self) -> None:
+        """
+        Обработка сигнала 'clicked' для кнопки pushButtonRT
+
+        :return: None
+        """
+
+        screen_width, _ = self.screenResolution()
+        window_width, _ = self.windowSize()
+
+        x = screen_width - window_width
+        y = 0
+
+        self.move(x, y)
+
+    def onPushButtonCenter(self) -> None:
+        """
+        Обработка сигнала 'clicked' для кнопки pushButtonCenter
+
+        :return: None
+        """
+
+        screen_width, screen_height = self.screenResolution()
+        window_width, window_height = self.windowSize()
+
+        x = int(screen_width / 2 - window_width / 2)
+        y = int(screen_height / 2 - window_height / 2)
+
+        self.move(x, y)
+
+    def onPushButtonLB(self) -> None:
+        """
+        Обработка сигнала 'clicked' для кнопки pushButtonLB
+
+        :return: None
+        """
+
+        _, screen_height = self.screenResolution()
+        _, window_height = self.windowSize()
+
+        x = 0
+        y = screen_height - window_height
+
+        self.move(x, y)
+
+    def onPushButtonRB(self) -> None:
+        """
+        Обработка сигнала 'clicked' для кнопки pushButtonRB
+
+        :return: None
+        """
+
+        screen_width, screen_height = self.screenResolution()
+        window_width, window_height = self.windowSize()
+
+        x = screen_width - window_width
+        y = screen_height - window_height
+
+        self.move(x, y)
 
     def onPushButtonMoveCoordsClicked(self) -> None:
         """
@@ -78,94 +157,127 @@ class Window(QtWidgets.QWidget):
         :return: None
         """
 
-        self.ui.plainTextEdit.appendPlainText(self.screenNumber())
-        self.ui.plainTextEdit.appendPlainText(self.currentScreen())
-        self.ui.plainTextEdit.appendPlainText(self.screenResolution())
-        self.ui.plainTextEdit.appendPlainText(self.windowSize())
-        self.ui.plainTextEdit.appendPlainText(self.minWindowSize())
-        self.ui.plainTextEdit.appendPlainText(self.currentWindowPos())
-        self.ui.plainTextEdit.appendPlainText(self.appCenterPos())
-        self.ui.plainTextEdit.appendPlainText(self.windowCurrentState())
+        log_list = [f'{ctime()}:']
 
-    def screenNumber(self):
+        screen_number = self.screenNumber()
+        log_list.append(f'Кол-во экранов:  {screen_number}')
+
+        current_screen = self.currentScreen()
+        log_list.append(f'Текущее основное окно:  {current_screen}')
+
+        resolution_width, resolution_height = self.screenResolution()
+        log_list.append(f'Разрешение экрана:  {resolution_width} x {resolution_height}')
+
+        # TODO: не доделала !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        log_list.append(f'{self.windowOnWhichScreen()}')
+
+        current_width, currrent_height = self.windowSize()
+        log_list.append(f'Размеры окна:  ширина - {current_width}, высота - {currrent_height}')
+
+        min_width, min_height = self.minWindowSize()
+        log_list.append(f'Минимальные размеры окна:  ширина - {min_width}, высота - {min_height}')
+
+        current_x, current_y = self.currentWindowPos()
+        log_list.append(f'Текущее положение (координаты) окна:  ({current_x}, {current_y})')
+
+        window_center_x, window_center_y = self.appCenterPos()
+        log_list.append(f'Координаты центра приложения:  ({window_center_x}, {window_center_x})')
+
+        # TODO: не доделала !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        window_state = self.windowCurrentState()
+        log_list.append(f'Отслеживание состояния окна:  {window_state}')
+
+        self.ui.plainTextEdit.appendPlainText('\n       '.join(log_list) + '\n')
+
+    # ---------------------------------------------------------------------
+    def screenNumber(self) -> int:
         """
         Определяет количество экранов
 
-        :return:
+        :return: int
         """
+        
+        return len(QGuiApplication.screens())
 
-        return f'Кол-во экранов: {len(QGuiApplication.screens())}'
-
-    def currentScreen(self):
+    def currentScreen(self) -> str:
         """
         Определяет текущее основное окно
 
-        :return:
+        :return: str
         """
 
-        #  PySide6.QtGui.QGuiApplication.primaryScreen: PySide6.QtGui.QScreen
-        # print(QGuiApplication.screens())  # [<PySide6.QtGui.QScreen(0x1c4d1901b80, name="PL2792Q (1)") at 0x000001C4D20AA5C0>,
-        #                                   # <PySide6.QtGui.QScreen(0x1c4d1901ee0, name="PL2792Q (2)") at 0x000001C4D20AA580>]
-        # print(QGuiApplication.primaryScreen().name())
+        return QGuiApplication.primaryScreen().name()
 
-        return f'Текущее основное окно: {QGuiApplication.primaryScreen().name()}'
-
-    def screenResolution(self):
+    def screenResolution(self) -> Tuple[int, int]:
         """
         Разрешение экрана в пикселях
 
-        :return:
+        :return: Tuple[int, int]
         """
 
         width = self.screen().size().width()
         height = self.screen().size().height()
 
-        return f'Разрешение экрана: {width} x {height}'
+        return width, height
 
-    def windowSize(self) -> str:
+    def windowOnWhichScreen(self):
+        """
+
+        :return:
+        """
+
+        return 'НЕ ДОДЕЛАЛА windowOnWhichScreen() !!!!'
+
+    def windowSize(self) -> Tuple[int, int]:
         """
         Определение размеров окна (ширина, высота)
 
-        :return: str
+        :return: Tuple[int, int]
         """
 
         width = self.size().width()
         height = self.size().height()
 
-        return f'Размеры окна: ширина - {width}, высота - {height}'
+        return width, height
 
-    def minWindowSize(self) -> str:
+    def minWindowSize(self) -> Tuple[int, int]:
         """
         Определение минимальных размеров окна (ширина, высота)
 
-        :return: str
+        :return: Tuple[int, int]
         """
 
         min_width = self.minimumSize().width()
         min_height = self.minimumSize().height()
 
-        return f'Минимальные размеры окна: ширина - {min_width}, высота - {min_height}'
+        return min_width, min_height
 
-    def currentWindowPos(self) -> str:
+    def currentWindowPos(self) -> Tuple[int, int]:
         """
         Определение текущего положения (координаты) окна (x, y)
 
-        :return: str
+        :return: Tuple[int, int]
         """
 
         x = self.pos().x()
         y = self.pos().y()
 
-        return f'Текущее положение (координаты) окна: ({x}, {y})'
+        return x, y
 
-    def appCenterPos(self) -> str:
+    def appCenterPos(self) -> Tuple[int, int]:
         """
         Координаты центра приложения
 
-        :return: str
+        :return: Tuple[int, int]
         """
 
-        return f'Координаты центра приложения: НЕ ДОДЕЛАЛА !!!!!!!!!'
+        window_cur_x, window_cur_y = self.currentWindowPos()
+        window_cur_width, window_cur_height = self.windowSize()
+
+        center_x = int(window_cur_x + window_cur_width / 2)
+        center_y = int(window_cur_y + window_cur_height / 2)
+
+        return center_x, center_y
 
     def windowCurrentState(self):
         """
@@ -173,9 +285,11 @@ class Window(QtWidgets.QWidget):
 
         :return:
         """
+        print()
+        print(self.windowState().name)
+        print()
+        return 'НЕ ДОДЕЛАЛА windowCurrentState() !!!!'
 
-        # print(self.windowState().WindowNoState)
-        return f'Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено): НЕ ДОДЕЛАЛА !!!!!!!!!'
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
