@@ -6,7 +6,7 @@
 
 + 1. Возможность перемещения окна по заданным координатам.
 
-+- 2. Возможность получения параметров экрана (вывод производить в plainTextEdit + добавлять время).
++ 2. Возможность получения параметров экрана (вывод производить в plainTextEdit + добавлять время).
     * Кол-во экранов    +
     * Текущее основное окно    +
     * Разрешение экрана    +
@@ -15,18 +15,19 @@
     * Минимальные размеры окна  +
     * Текущее положение (координаты) окна   +
     * Координаты центра приложения  +
-    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)  +-
+    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)  + Перенесла в 3ий пункт
 
 - 3. Возможность отслеживания состояния окна (вывод производить в консоль + добавлять время).
-    * При перемещении окна выводить его старую и новую позицию
-    * При изменении размера окна выводить его новый размер
+    * При перемещении окна выводить его старую и новую позицию +
+    * При изменении размера окна выводить его новый размер +
 """
 
-from time import ctime
+from datetime import datetime
 from typing import Tuple
 
+import PySide6
 from PySide6 import QtWidgets
-from PySide6.QtGui import QGuiApplication, QWindow
+from PySide6.QtGui import QGuiApplication, QMoveEvent, QResizeEvent, QHideEvent, QShowEvent, QWindowStateChangeEvent
 
 from home_work_2.ui.c_signals_events import Ui_Form
 
@@ -38,6 +39,8 @@ class Window(QtWidgets.QWidget):
 
         self.ui = Ui_Form()
         self.ui.setupUi(self)
+
+        self.timestamp = f'{datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")}:'
 
         self.initUi()
         self.initSignals()
@@ -157,7 +160,7 @@ class Window(QtWidgets.QWidget):
         :return: None
         """
 
-        log_list = [f'{ctime()}:']
+        log_list = [self.timestamp]
 
         screen_number = self.screenNumber()
         log_list.append(f'Кол-во экранов:  {screen_number}')
@@ -182,9 +185,6 @@ class Window(QtWidgets.QWidget):
 
         window_center_x, window_center_y = self.appCenterPos()
         log_list.append(f'Координаты центра приложения:  ({window_center_x}, {window_center_x})')
-
-        window_state = self.windowCurrentState()
-        log_list.append(f'Отслеживание состояния окна:  {window_state}')
 
         self.ui.plainTextEdit.appendPlainText('\n       '.join(log_list) + '\n')
 
@@ -278,22 +278,59 @@ class Window(QtWidgets.QWidget):
 
         return center_x, center_y
 
-    # TODO: мне кажется неправильно сделала!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    def windowCurrentState(self):
+    # events ---------------------------------------------------------------
+    def moveEvent(self, event: QMoveEvent) -> None:
         """
-        Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)
+        Отслеживание события 'изменения положения окна'
 
+        :param event: QMoveEvent
+        :return: None
+        """
+
+        old_x, old_y = event.oldPos().x(), event.oldPos().y()
+        new_x, new_y = event.pos().x(), event.pos().y()
+
+        print(f'{self.timestamp} Прежние координаты окна {old_x, old_y}, текущие координаты окна {new_x, new_y}')
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """
+        Отслеживание события 'изменение размера окна'
+
+        :param event: QResizeEvent
+        :return: None
+        """
+
+        new_width, new_height = event.size().width(), event.size().height()
+
+        print(f'{self.timestamp} Новый размер окна {new_width, new_height}')
+
+    # def event(self, event: QEvent) -> bool:
+    #     if event.type() == QEvent.Type.Hide:
+    #         print()
+    #         print(event.__dict__)
+    #         print()
+    #     print(event.type(), event)
+    #     super().event(event)
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        """
+
+        :param event:
         :return:
         """
 
-        if self.isFullScreen():
-            return 'развёрнуто'
-        elif self.isActiveWindow():
-            return 'активно'
-        elif self.isVisible():
-            return 'отображено'
-        elif self.isMinimized():
-            return 'свернуто'
+        print(f'{self.timestamp} Окно было свернуто')
+
+    def showEvent(self, event: QShowEvent) -> None:
+        """
+
+        :param event:
+        :return:
+        """
+
+        print(f'{self.timestamp} Окно было развернуто')
+
+
 
 
 if __name__ == "__main__":
