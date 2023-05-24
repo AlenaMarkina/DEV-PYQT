@@ -10,24 +10,24 @@
     * Кол-во экранов    +
     * Текущее основное окно    +
     * Разрешение экрана    +
-    * На каком экране окно находится    -
+    * На каком экране окно находится    +
     * Размеры окна  +
     * Минимальные размеры окна  +
     * Текущее положение (координаты) окна   +
     * Координаты центра приложения  +
-    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)  + Перенесла в 3ий пункт
+    * Отслеживание состояния окна (свернуто/развёрнуто/активно/отображено)  +   Перенесла в 3ий пункт
 
-- 3. Возможность отслеживания состояния окна (вывод производить в консоль + добавлять время).
++ 3. Возможность отслеживания состояния окна (вывод производить в консоль + добавлять время).
     * При перемещении окна выводить его старую и новую позицию +
     * При изменении размера окна выводить его новый размер +
 """
 
-from datetime import datetime
 from typing import Tuple
+from datetime import datetime
 
-import PySide6
+from PySide6.QtCore import QEvent
 from PySide6 import QtWidgets
-from PySide6.QtGui import QGuiApplication, QMoveEvent, QResizeEvent, QHideEvent, QShowEvent, QWindowStateChangeEvent
+from PySide6.QtGui import QGuiApplication, QMoveEvent, QResizeEvent, QHideEvent, QShowEvent
 
 from home_work_2.ui.c_signals_events import Ui_Form
 
@@ -47,8 +47,9 @@ class Window(QtWidgets.QWidget):
 
     def initUi(self) -> None:
         """
+        Доинициализация окна
 
-        :return:
+        :return: None
         """
 
         self.ui.spinBoxX.setMinimumWidth(50)
@@ -166,13 +167,12 @@ class Window(QtWidgets.QWidget):
         log_list.append(f'Кол-во экранов:  {screen_number}')
 
         current_screen = self.currentScreen()
-        log_list.append(f'Текущее основное окно:  {current_screen}')
+        log_list.append(f'Текущий основной экран:  {current_screen}')
 
         resolution_width, resolution_height = self.screenResolution()
         log_list.append(f'Разрешение экрана:  {resolution_width} x {resolution_height}')
 
-        # TODO: не доделала !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        log_list.append(f'{self.windowOnWhichScreen()}')
+        log_list.append(f'Окно находится на экране: {self.windowOnWhichScreen()}')
 
         current_width, currrent_height = self.windowSize()
         log_list.append(f'Размеры окна:  ширина - {current_width}, высота - {currrent_height}')
@@ -191,7 +191,7 @@ class Window(QtWidgets.QWidget):
     # ---------------------------------------------------------------------
     def screenNumber(self) -> int:
         """
-        Определяет количество экранов
+        Определение количества экранов
 
         :return: int
         """
@@ -200,7 +200,7 @@ class Window(QtWidgets.QWidget):
 
     def currentScreen(self) -> str:
         """
-        Определяет текущее основное окно
+        Определение текущего основного экрана
 
         :return: str
         """
@@ -209,7 +209,7 @@ class Window(QtWidgets.QWidget):
 
     def screenResolution(self) -> Tuple[int, int]:
         """
-        Разрешение экрана в пикселях
+        Определение разрешения экрана в пикселях
 
         :return: Tuple[int, int]
         """
@@ -219,13 +219,14 @@ class Window(QtWidgets.QWidget):
 
         return width, height
 
-    def windowOnWhichScreen(self):
+    def windowOnWhichScreen(self) -> str:
+        """
+        Определение экрана, на котором находится окно
+
+        :return: str
         """
 
-        :return:
-        """
-
-        return 'НЕ ДОДЕЛАЛА windowOnWhichScreen() !!!!'
+        return self.screen().name()
 
     def windowSize(self) -> Tuple[int, int]:
         """
@@ -265,7 +266,7 @@ class Window(QtWidgets.QWidget):
 
     def appCenterPos(self) -> Tuple[int, int]:
         """
-        Координаты центра приложения
+        Определение координат центра приложения
 
         :return: Tuple[int, int]
         """
@@ -279,6 +280,14 @@ class Window(QtWidgets.QWidget):
         return center_x, center_y
 
     # events ---------------------------------------------------------------
+    # TODO: возможно неверно сделала отслеживание активно/неактивно окно. Не поняла как по-другому сделать.
+    def event(self, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.WindowActivate:
+            print(f'{self.timestamp} Окно активно')
+        if event.type() == QEvent.Type.WindowDeactivate:
+            print(f'{self.timestamp} Окно неактивно')
+        return super().event(event)
+
     def moveEvent(self, event: QMoveEvent) -> None:
         """
         Отслеживание события 'изменения положения окна'
@@ -304,33 +313,25 @@ class Window(QtWidgets.QWidget):
 
         print(f'{self.timestamp} Новый размер окна {new_width, new_height}')
 
-    # def event(self, event: QEvent) -> bool:
-    #     if event.type() == QEvent.Type.Hide:
-    #         print()
-    #         print(event.__dict__)
-    #         print()
-    #     print(event.type(), event)
-    #     super().event(event)
-
     def hideEvent(self, event: QHideEvent) -> None:
         """
+        Отслеживание события 'окно свернуто'
 
-        :param event:
-        :return:
+        :param event: QHideEvent
+        :return: None
         """
 
         print(f'{self.timestamp} Окно было свернуто')
 
     def showEvent(self, event: QShowEvent) -> None:
         """
+        Отслеживание события 'окно развернуто'
 
-        :param event:
-        :return:
+        :param event: QShowEvent
+        :return:None
         """
 
         print(f'{self.timestamp} Окно было развернуто')
-
-
 
 
 if __name__ == "__main__":
