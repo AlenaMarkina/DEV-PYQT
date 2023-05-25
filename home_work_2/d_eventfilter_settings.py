@@ -19,6 +19,7 @@
 """
 
 from PySide6 import QtWidgets
+from PySide6.QtCore import QEvent, QObject
 
 from home_work_2.ui.d_eventfilter_settings import Ui_Form
 
@@ -30,6 +31,51 @@ class Window(QtWidgets.QWidget):
 
         self.ui = Ui_Form()
         self.ui.setupUi(self)
+
+        self.initUi()
+        self.initSignal()
+
+    def initUi(self):
+        """
+
+        :return:
+        """
+
+        self.setMinimumSize(600, 600)
+        self.ui.comboBox.addItems(['oct', 'hex', 'bin', 'dec'])
+
+    def initSignal(self):
+        """
+
+        :return:
+        """
+
+        # self.ui.dial.valueChanged
+
+        self.ui.comboBox.textActivated.connect(self.onComboBoxTextActivated)
+
+        # self.ui.dial.installEventFilter(self)
+
+    def onComboBoxTextActivated(self):
+        number_system = self.ui.comboBox.currentText()
+        if number_system == 'hex':
+            pass
+            # TODO set the hex mode to lcdNumber
+            # self.ui.lcdNumber.display()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """
+
+        :param watched:
+        :param event:
+        :return:
+        """
+
+        if watched == self.ui.dial and event.type() == QEvent.Type.KeyPress:
+            print(event.key())
+            print(event.type().value())
+
+        return super(Window, self).eventFilter(watched, event)
 
 
 if __name__ == "__main__":
