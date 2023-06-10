@@ -5,16 +5,17 @@
 
 Форма должна содержать:
 + 1. поле для ввода времени задержки
-2. поле для вывода информации о загрузке CPU
-3. поле для вывода информации о загрузке RAM
-4. поток необходимо запускать сразу при старте приложения
-5. установку времени задержки сделать "горячей", т.е. поток должен сразу
++ 2. поле для вывода информации о загрузке CPU
++ 3. поле для вывода информации о загрузке RAM
++ 4. поток необходимо запускать сразу при старте приложения
++ 5. установку времени задержки сделать "горячей", т.е. поток должен сразу
    реагировать на изменение времени задержки
 """
 
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtWidgets import QApplication, QLabel, QLineEdit, QTextEdit, \
-	QHBoxLayout, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QLabel, QSpinBox, QPlainTextEdit, \
+	QVBoxLayout
+from PySide6.QtGui import QCloseEvent
 
 from a_threads import SystemInfo
 
@@ -24,40 +25,63 @@ class MyWindow(QtWidgets.QWidget):
 		super().__init__(parent)
 
 		self.initUi()
+		self.initThread()
+		self.initSignals()
 
 	def initUi(self):
 		self.setMinimumSize(500, 300)
 
 		labelTimeDelay = QLabel()
 		labelTimeDelay.setText('Введите время задержки')
-		# labelTimeDelay.setFixedSize(188, 30)
 
-		self.lineEditTimeDelay = QLineEdit()
-		# self.lineEditTimeDelay.setFixedSize(70, 30)
+		labelCPU = QLabel()
+		labelCPU.setText('Загрузка CPU')
 
-		self.textEdit = QTextEdit()
-		# self.textEdit.setFixedSize(200, 50)
+		labelRAM = QLabel()
+		labelRAM.setText('Загрузка RAM')
 
-		layoutTimeDelay = QHBoxLayout()
-		layoutTimeDelay.addWidget(labelTimeDelay)
-		layoutTimeDelay.addWidget(self.lineEditTimeDelay)
+		self.spinBox = QSpinBox()
+		self.spinBox.setMinimum(1)
 
-		layotTextEdit = QHBoxLayout()
-		layotTextEdit.addWidget(self.textEdit)
+		self.textEditCPU = QPlainTextEdit()
+		self.textEditCPU.setReadOnly(True)
+		self.textEditRAM = QPlainTextEdit()
+		self.textEditRAM.setReadOnly(True)
+
+		layoutGrid = QtWidgets.QGridLayout()
+		layoutGrid.addWidget(labelTimeDelay, 0, 0)
+		layoutGrid.addWidget(self.spinBox, 0, 1)
+		layoutGrid.addWidget(labelCPU, 1, 0)
+		layoutGrid.addWidget(labelRAM, 1, 1)
+		layoutGrid.addWidget(self.textEditCPU, 2, 0)
+		layoutGrid.addWidget(self.textEditRAM, 2, 1)
 
 		layoutMain = QVBoxLayout()
-		layoutMain.addLayout(layoutTimeDelay)
-		layoutMain.addLayout(layotTextEdit)
+		layoutMain.addLayout(layoutGrid)
 
 		self.setLayout(layoutMain)
 
-
-
 	def initThread(self):
-		pass
+		self.thread = SystemInfo()
+		self.thread.start()
+		print('thread is started..')
 
 	def initSignals(self):
-		pass
+		self.thread.systemInfoReceived.connect(self.threadHandler)
+		self.spinBox.textChanged.connect(self.onSpinBoxChanged)
+
+	def closeEvent(self, event: QCloseEvent) -> None:
+		self.thread.terminate()
+		print('thread is closed..')
+
+	def threadHandler(self, list_of_data: list):
+		cpu_value, ram_value = list_of_data
+		self.textEditCPU.appendPlainText(f'{cpu_value} %')
+		self.textEditRAM.appendPlainText(f'{ram_value} %')
+
+	def onSpinBoxChanged(self):
+		delay_number = self.spinBox.value()
+		self.thread.delay = delay_number
 
 
 if __name__ == '__main__':

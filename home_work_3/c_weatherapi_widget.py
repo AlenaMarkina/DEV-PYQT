@@ -19,6 +19,7 @@ from a_threads import WeatherHandler
 class WindowWeather(QtWidgets.QWidget):
     lat = 36.826903
     lon = 10.173742
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
