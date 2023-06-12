@@ -19,7 +19,7 @@ from PySide6.QtGui import QCloseEvent
 from a_threads import SystemInfo
 
 
-class MyWindow(QtWidgets.QWidget):
+class SystemInfoWindow(QtWidgets.QWidget):
 	def __init__(self, parent=None):
 		super().__init__(parent)
 
@@ -35,7 +35,7 @@ class MyWindow(QtWidgets.QWidget):
 
 		:return: None
 		"""
-		self.setMinimumSize(500, 300)
+		self.setMinimumSize(350, 300)
 
 		labelTimeDelay = QLabel()
 		labelTimeDelay.setText('Введите время задержки')
@@ -122,7 +122,7 @@ class MyWindow(QtWidgets.QWidget):
 if __name__ == '__main__':
 	app = QApplication()
 
-	window = MyWindow()
+	window = SystemInfoWindow()
 	window.show()
 
 	app.exec()

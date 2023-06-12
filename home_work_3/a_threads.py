@@ -39,7 +39,7 @@ class WeatherHandler(QtCore.QThread):
         self.__latitude: Optional[float] = None
         self.__longitude: Optional[float] = None
         self.__delay: Optional[int] = None
-        self.__status: bool = False
+        self.__status: Optional[bool] = None
         self.__api_url = ''
 
     @property

@@ -14,7 +14,7 @@ from PySide6 import QtWidgets
 from a_threads import WeatherHandler
 
 
-class MyWindow(QtWidgets.QWidget):
+class WeatherApiWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -30,7 +30,7 @@ class MyWindow(QtWidgets.QWidget):
 
         :return: None
         """
-        self.setMinimumSize(500, 400)
+        self.setMinimumSize(350, 300)
 
         labelLatitude = QtWidgets.QLabel()
         labelLatitude.setText('Введите широту')
@@ -116,7 +116,7 @@ class MyWindow(QtWidgets.QWidget):
 
         :return: None
         """
-        self.thread.terminate()  # TODO: правильно ли я применила terminate(), ведь он завершает поток, а не останавливает ?
+        self.thread.status = False
 
         print('Поток остановлен.')
 
@@ -140,7 +140,7 @@ class MyWindow(QtWidgets.QWidget):
 if __name__ == '__main__':
     app = QtWidgets.QApplication()
 
-    window = MyWindow()
+    window = WeatherApiWindow()
     window.show()
 
     app.exec()
