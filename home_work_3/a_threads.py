@@ -3,8 +3,10 @@
 """
 
 import time
+from typing import Optional
 
 import psutil
+import requests
 from PySide6 import QtCore
 
 
@@ -31,45 +33,85 @@ class WeatherHandler(QtCore.QThread):
     # TODO Пропишите сигналы, которые считаете нужными
     response = QtCore.Signal(dict)
 
-    def __init__(self, lat, lon, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.__api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
-        self.__delay = 10
-        self.__status = None
+        self.__latitude: Optional[float] = None
+        self.__longitude: Optional[float] = None
+        self.__delay: Optional[int] = None
+        self.__status: bool = False
+        self.__api_url = ''
 
-    def setDelay(self, delay) -> None:
-        """
-        Метод для установки времени задержки обновления сайта
+    @property
+    def delay(self):
+        return self.__delay
 
-        :param delay: время задержки обновления информации о доступности сайта
-        :return: None
-        """
+    @delay.setter
+    def delay(self, value):
+        self.__delay = value
 
-        self.__delay = delay
+    @property
+    def latitude(self):
+        return self.__latitude
 
-    def run(self, requests=None) -> None:
+    @latitude.setter
+    def latitude(self, value):
+        self.__latitude = value
+
+    @property
+    def longitude(self):
+        return self.__longitude
+
+    @longitude.setter
+    def longitude(self, value):
+        self.__longitude = value
+
+    @property
+    def status(self):
+        return self.__status
+
+    @status.setter
+    def status(self, value):
+        self.__status = value
+
+    @property
+    def api_url(self):
+        return self.__api_url
+
+    @api_url.setter
+    def api_url(self, value: tuple):
+        lat, lon = value
+        self.__api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&" \
+                         f"longitude={lon}&current_weather=true"
+
+    def run(self) -> None:
         # TODO настройте метод для корректной работы
+        # print(f'\nlatitude = {self.latitude}, longitude = {self.longitude}, delay = {self.delay}')
 
-        if not self.__status:
-            self.__status = 200
+        if not all([self.latitude, self.longitude]):
+            print('Thread is closed\n')
+            return
 
-        while self.__status:
+        self.status = True
+
+        while self.status:
 
             try:
-                response = requests.get(self.__api_url)
-                self.__status = response.status_code
+                # print(self.api_url)
+                response = requests.get(self.api_url)
 
-                if self.__status != self.OK_STATUS:
-                    print(f'Что-то пошло не так: status_code={self.__status}')
-                    break
+                if response.status_code != self.OK_STATUS:
+                    print(f'Что-то пошло не так: status_code={response.status_code}')
+                    self.status = False
+                    return
 
                 data = response.json()
                 self.response.emit(data)
-                time.sleep(self.__delay)
+                time.sleep(self.delay)
 
-            except ConnectionError as e:
-                self.__status = None
+            except Exception as e:
+                print('harry')
+                self.status = False
                 print(e)
-                break
+                return
 

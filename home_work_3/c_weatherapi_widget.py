@@ -27,6 +27,8 @@ class WindowWeather(QtWidgets.QWidget):
         self.ui_s.setupUi(self)
         # self.initThreads()
         self.ui_s.radioButton3.setChecked(True)
+
+    def initSignals(self):
         self.ui_s.radioButton3.clicked.connect(self.updateDelay)
         self.ui_s.radioButton5.clicked.connect(self.updateDelay)
         self.ui_s.radioButton10.clicked.connect(self.updateDelay)
