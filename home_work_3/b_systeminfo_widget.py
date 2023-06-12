@@ -12,9 +12,8 @@
    реагировать на изменение времени задержки
 """
 
-from PySide6 import QtWidgets, QtCore
-from PySide6.QtWidgets import QApplication, QLabel, QSpinBox, QPlainTextEdit, \
-	QVBoxLayout
+from PySide6 import QtWidgets
+from PySide6.QtWidgets import QApplication, QLabel, QSpinBox, QPlainTextEdit, QVBoxLayout
 from PySide6.QtGui import QCloseEvent
 
 from a_threads import SystemInfo
@@ -24,11 +23,18 @@ class MyWindow(QtWidgets.QWidget):
 	def __init__(self, parent=None):
 		super().__init__(parent)
 
+		self.thread = None
+
 		self.initUi()
 		self.initThread()
 		self.initSignals()
 
-	def initUi(self):
+	def initUi(self) -> None:
+		"""
+		Доинициализация окна
+
+		:return: None
+		"""
 		self.setMinimumSize(500, 300)
 
 		labelTimeDelay = QLabel()
@@ -61,27 +67,56 @@ class MyWindow(QtWidgets.QWidget):
 
 		self.setLayout(layoutMain)
 
-	def initThread(self):
+	def initThread(self) -> None:
+		"""
+		Инициализация потока
+
+		:return: None
+		"""
 		self.thread = SystemInfo()
 		self.thread.start()
-		print('thread is started..')
 
-	def initSignals(self):
-		self.thread.systemInfoReceived.connect(self.threadHandler)
+		print('Поток запущен.')
+
+	def initSignals(self) -> None:
+		"""
+		Инициализация сигналов
+
+		:return: None
+		"""
 		self.spinBox.textChanged.connect(self.onSpinBoxChanged)
+		self.thread.systemInfoReceived.connect(self.threadHandler)
 
-	def closeEvent(self, event: QCloseEvent) -> None:
-		self.thread.terminate()
-		print('thread is closed..')
+	def threadHandler(self, list_of_data: list) -> None:
+		"""
+		Обработка данных из потока
 
-	def threadHandler(self, list_of_data: list):
+		:param list_of_data: Список данных о загрузке CPU и RAM
+		:return: None
+		"""
 		cpu_value, ram_value = list_of_data
+
 		self.textEditCPU.appendPlainText(f'{cpu_value} %')
 		self.textEditRAM.appendPlainText(f'{ram_value} %')
 
-	def onSpinBoxChanged(self):
+	def onSpinBoxChanged(self) -> None:
+		"""
+		Обработка сигнала 'textChanged' для виджета spinBox
+
+		:return: None
+		"""
 		delay_number = self.spinBox.value()
 		self.thread.delay = delay_number
+
+	def closeEvent(self, event: QCloseEvent) -> None:
+		"""
+		Обработка события закрытия окна
+
+		:param event: QCloseEvent
+		:return: None
+		"""
+		self.thread.terminate()
+		print('Поток закрыт.')
 
 
 if __name__ == '__main__':

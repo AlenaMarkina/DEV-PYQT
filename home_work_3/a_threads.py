@@ -86,32 +86,26 @@ class WeatherHandler(QtCore.QThread):
 
     def run(self) -> None:
         # TODO настройте метод для корректной работы
-        # print(f'\nlatitude = {self.latitude}, longitude = {self.longitude}, delay = {self.delay}')
 
         if not all([self.latitude, self.longitude]):
-            print('Thread is closed\n')
+            print('Поток закрыт.')
             return
 
         self.status = True
 
         while self.status:
-
             try:
-                # print(self.api_url)
                 response = requests.get(self.api_url)
 
                 if response.status_code != self.OK_STATUS:
-                    print(f'Что-то пошло не так: status_code={response.status_code}')
-                    self.status = False
+                    print(f'Что-то пошло не так, поток закрыт: status_code = {response.status_code}')
                     return
 
                 data = response.json()
                 self.response.emit(data)
                 time.sleep(self.delay)
 
-            except Exception as e:
-                print('harry')
-                self.status = False
+            except requests.exceptions.ConnectionError as e:
                 print(e)
                 return
 
