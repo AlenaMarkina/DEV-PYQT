@@ -5,12 +5,23 @@ class MyWindow(QtWidgets.QWidget):
 	def __init__(self, parent=None):
 		super().__init__(parent)
 
+		self.initUi()
+
 	def initUi(self) -> None:
 		"""
 
 		:return:
 		"""
-		pass
+		self.setWindowTitle('Заметки')
+		self.mdiAria = QtWidgets.QMdiArea()
+
+		layout = QtWidgets.QHBoxLayout()
+		layout.addWidget(self.mdiAria)
+
+		layoutMain = QtWidgets.QHBoxLayout()
+		layoutMain.addLayout(layout)
+
+		self.setLayout(layoutMain)
 
 	def initSignals(self) -> None:
 		"""
