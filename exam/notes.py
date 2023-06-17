@@ -1,4 +1,7 @@
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
+from PySide6.QtWidgets import QFrame, QPushButton, QPlainTextEdit, QHBoxLayout
+from PySide6.QtGui import QColor
+import PySide6
 
 
 class MyWindow(QtWidgets.QWidget):
@@ -6,6 +9,7 @@ class MyWindow(QtWidgets.QWidget):
 		super().__init__(parent)
 
 		self.initUi()
+		self.initSignals()
 
 	def initUi(self) -> None:
 		"""
@@ -13,13 +17,36 @@ class MyWindow(QtWidgets.QWidget):
 		:return:
 		"""
 		self.setWindowTitle('Заметки')
-		self.mdiAria = QtWidgets.QMdiArea()
+		self.setMinimumSize(850, 550)
 
-		layout = QtWidgets.QHBoxLayout()
-		layout.addWidget(self.mdiAria)
+		# frame ---------------------------------------------------------------
+		self.frameNewNote = QFrame()
+		# self.frameNewNote.setMaximumSize(200, 500)
+		self.frameNewNote.setMinimumWidth(200)
+		self.frameNewNote.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Plain)
+		# self.frameNewNote.setContentsMargins(1, 5, 0, 5)
 
-		layoutMain = QtWidgets.QHBoxLayout()
-		layoutMain.addLayout(layout)
+		# pushButton -----------------------------------------------------------
+		self.pushButtonNewNote = QPushButton()
+		self.pushButtonNewNote.setText('Новая заметка')
+		self.pushButtonNewNote.setMaximumSize(120, 50)
+
+		# plainTextEdit --------------------------------------------------------
+		self.plainTextEdit = QPlainTextEdit()
+		# self.plainTextEdit.setMaximumSize(400, 500)
+		self.plainTextEdit.setPlaceholderText('Предварительный просмотр')
+
+		layoutPushButton = QHBoxLayout()
+		layoutPushButton.addWidget(self.pushButtonNewNote, alignment=QtCore.Qt.AlignmentFlag.AlignTop)
+
+		self.frameNewNote.setLayout(layoutPushButton)
+
+		layoutFrame1 = QHBoxLayout()
+		layoutFrame1.addWidget(self.frameNewNote)
+		layoutFrame1.addWidget(self.plainTextEdit)
+
+		layoutMain = QHBoxLayout()
+		layoutMain.addLayout(layoutFrame1)
 
 		self.setLayout(layoutMain)
 
@@ -28,8 +55,16 @@ class MyWindow(QtWidgets.QWidget):
 
 		:return:
 		"""
+		self.pushButtonNewNote.clicked.connect(lambda: self.plainTextEdit.appendPlainText('Harry'))
+
+	# slots --------------------------------------------------------------
+	def onPushButtonNewNote(self):
 		pass
 
+	# ---------------------------------------------------------------------
+	def create_new_button(self):
+		self.pushBotton = QPushButton()
+		self.pushBotton.set
 
 if __name__ == '__main__':
 	app = QtWidgets.QApplication()
