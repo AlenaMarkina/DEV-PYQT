@@ -6,6 +6,9 @@ from PySide6.QtGui import QColor
 
 
 class NewNote(QtWidgets.QWidget):
+
+    new_note_signal = QtCore.Signal(tuple)
+
     def __init__(self, thread, parent=None):
         super().__init__(parent)
 
@@ -56,13 +59,17 @@ class NewNote(QtWidgets.QWidget):
 
     def onPushButtonSaveNote(self):
         text = self.plainTextEdit.toPlainText()
+        new_line_symbol = text.find('\n')
+        note_title = text[:new_line_symbol]
+        button_name = f'note_{self.note_id}'  # note_1, note_2
+
         current_date = datetime.now().strftime('%d.%m.%Y %H:%M')  # 18.06.2023 15:53
         expiry_date = self.dateTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm')  # yyyy-MM-dd
 
-        self.notes_dict[f'button_{self.note_id}'] = {'create_note_time': current_date,
-                                                     'expiry_date': expiry_date,
-                                                     'time_delta': '',
-                                                     'note': text}
+        self.notes_dict[button_name] = {'create_note_time': current_date,
+                                        'expiry_date': expiry_date,
+                                        'time_delta': '',
+                                        'note': text}
 
         self.thread.save_json(self.notes_dict)
 
@@ -71,8 +78,15 @@ class NewNote(QtWidgets.QWidget):
         self.dateTimeEdit.setDateTime(default_time)
         self.plainTextEdit.setPlainText('')
         self.note_id += 1
+        self.new_note_signal.emit((note_title, button_name))
         self.close()
 
+    # {'note_1': {'create_note_time': '20.06.2023 11:15',
+    #               'expiry_date': '01.01.2000 00:00',
+    #               'note': ''},
+    #  'note_2': {'create_note_time': '20.06.2023 11:15',
+    #               'expiry_date': '01.01.2000 00:00',
+    #               'note': ''}}
 
 if __name__ == '__main__':
     pass

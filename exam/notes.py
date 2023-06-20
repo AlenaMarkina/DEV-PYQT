@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QFrame, QPushButton, QPlainTextEdit, QMessageBox, 
 from PySide6.QtGui import QColor
 import PySide6
 import time
+from typing import Tuple
 import os
 from json_thread import JsonThread
 from new_note import NewNote
@@ -24,22 +25,20 @@ class MyWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.button_counter: int = 0
         self.push_button_list = []
         self.which_button_pressed = None
-        self.pushButton = None
         self.thread = None
 
         self.initUi()
         self.initThread()
+        self.new_note_window = NewNote(self.thread)
         self.initSignals()
-
-        self.note_window = NewNote(self.thread)
 
     def initUi(self) -> None:
         """
+        Инициализация окна
 
-        :return:
+        :return: None
         """
         self.setWindowTitle('Заметки')
         self.setMinimumSize(400, 400)
@@ -52,13 +51,13 @@ class MyWindow(QtWidgets.QWidget):
         # self.frameNewNote.setContentsMargins(1, 5, 0, 5)
 
         # pushButton -----------------------------------------------------------
+        self.pushButtonCreateNewNote = QPushButton()
+        self.pushButtonCreateNewNote.setText('Добавить заметку')
+        self.pushButtonCreateNewNote.setMaximumSize(150, 50)
+
         self.pushButtonSaveChanges = QPushButton()
         self.pushButtonSaveChanges.setText('Сохранить изменения')
         self.pushButtonSaveChanges.setMaximumSize(150, 50)
-
-        self.pushButtonNewNote = QPushButton()
-        self.pushButtonNewNote.setText('Добавить заметку')
-        self.pushButtonNewNote.setMaximumSize(150, 50)
 
         # plainTextEdit --------------------------------------------------------
         self.plainTextEdit = QPlainTextEdit()
@@ -66,7 +65,7 @@ class MyWindow(QtWidgets.QWidget):
         self.plainTextEdit.setPlaceholderText('Предварительный просмотр')
 
         self.layoutFrame = QVBoxLayout()
-        self.layoutFrame.addWidget(self.pushButtonNewNote, alignment=QtCore.Qt.AlignmentFlag.AlignTop)
+        self.layoutFrame.addWidget(self.pushButtonCreateNewNote, alignment=QtCore.Qt.AlignmentFlag.AlignTop)
         self.layoutFrame.addWidget(self.pushButtonSaveChanges, alignment=QtCore.Qt.AlignmentFlag.AlignTop)
 
         self.frameNewNote.setLayout(self.layoutFrame)
@@ -80,71 +79,84 @@ class MyWindow(QtWidgets.QWidget):
 
         self.setLayout(layoutMain)
 
-    def initThread(self):
+    def initThread(self) -> None:
+        """
+        Инициализация потока
+
+        :return: None
+        """
         self.thread = JsonThread()
         self.thread.start()
 
     def initSignals(self) -> None:
         """
-        :return:
-        """
-        self.pushButtonNewNote.clicked.connect(self.onPushButtonCreateNote)
-        self.pushButtonSaveChanges.clicked.connect(self.plainTextEditChanged)
-        self.thread.data.connect(
-            lambda x: print(x))  # {'button_1': [-8572, 8, 36], 'button_2': [-8572, 8, 36], 'button_3': [-8572, 8, 36]}
+        Инициализация сигналов
 
-    # self.plainTextEdit.textChanged.connect(self.onPushButtonNewNote)
+        :return: None
+        """
+        self.pushButtonCreateNewNote.clicked.connect(self.onPushButtonCreateNewNote)
+        self.pushButtonSaveChanges.clicked.connect(self.onPushButtonSaveChanges)
+        self.new_note_window.new_note_signal.connect(self.newNoteSignalHandle)
+        self.thread.data.connect(lambda x: print(x))  # {'button_1': [-8572, 8, 36], 'button_2': [-8572, 8, 36], 'button_3': [-8572, 8, 36]}
 
     # slots --------------------------------------------------------------
-    def onPushButtonCreateNote(self):
+    def onPushButtonCreateNewNote(self) -> None:
         """
         Создание и размещение новой кнопки на панели и подключение к ней сигнала 'clicked'
 
         :return: None
         """
-        self.note_window.show()
-        self.button_counter += 1
+        self.new_note_window.show()
+
+    def newNoteSignalHandle(self, data: Tuple[str, str]) -> None:
+        """
+        Обработка сигнала из дочернего окна 'new_note_window':
+
+        - создание и размещение новой кнопки на панели;
+        - подключение к кнопке сигнала 'clicked';
+        - подключение к кнопке фильтра событий 'installEventFilter'
+
+        :param data: Кортеж из заголовка заметки и названия кнопки, которая ассоциируется с этой заметкой
+        :return: None
+        """
+        note_title, button_name = data  # 'harry', 'note_1'
 
         pushButton = QPushButton()
         pushButton.setMaximumSize(120, 50)
-        pushButton.setAccessibleName(f'button_{self.button_counter}')
-        pushButton.setText(f'button_{self.button_counter}')
-        pushButton.clicked.connect(partial(self.onPushButtonNote, pushButton))
+        pushButton.setAccessibleName(button_name)
+        pushButton.setText(note_title)
+
+        pushButton.clicked.connect(partial(self.onPushButton, pushButton))
         pushButton.installEventFilter(self)
 
-        # pushButton.mouseDoubleClickEvent(PySide6.QtGui.QMouseEvent(type=QtCore.QEvent.Type.MouseButtonDblClick))
         self.push_button_list.append(pushButton)
-
         self.layoutFrame.addWidget(pushButton, )
 
-    def onPushButtonNote(self, button):
-        # {'button_1': {'create_note_time': '19.06.2023 11:48',
-        #               'expiry_date': '19.06.2023 15:00',
-        #               'note': 'Harry Potter'},
-        #  'button_2': {'create_note_time': '19.06.2023 11:49',
-        #               'expiry_date': '19.06.2023 16:00',
-        #               'note': 'Ron and Hermiona'}}
-        print('\nin onPushButtonNote()')
-        print(f'    {button.accessibleName()}')
+    def onPushButton(self, button: QPushButton) -> None:
+        """
+        Обработка сигнала 'clicked' для кнопки, которая ассоциируется с заметкой
 
-        # отобразили предыдущую запись
+        :param button: QPushButton
+        :return: None
+        """
+        print()
         text = self.thread.load_json()
+
         self.plainTextEdit.setPlainText(text[f'{button.accessibleName()}']['note'])
-
         self.which_button_pressed = button
-        print(self.which_button_pressed)
 
-        pprint.pprint(self.note_window.notes_dict)
+        pprint.pprint(self.new_note_window.notes_dict)
         print()
 
-    def plainTextEditChanged(self):
-        print('\nin plainTextEditChanged()')
-        print(f'    {self.plainTextEdit.toPlainText()}')
-        current_text = self.plainTextEdit.toPlainText()
-        self.note_window.notes_dict[f'{self.which_button_pressed.accessibleName()}']['note'] = current_text
-        self.thread.save_json(self.note_window.notes_dict)
+    def onPushButtonSaveChanges(self) -> None:
+        """
+        Обработка сигнала 'clicked' для кнопки pushButtonSaveChanges
 
-        print()
+        :return: None
+        """
+        text = self.plainTextEdit.toPlainText()
+        self.new_note_window.notes_dict[f'{self.which_button_pressed.accessibleName()}']['note'] = text
+        self.thread.save_json(self.new_note_window.notes_dict)
 
     def show_message_question(self, watched) -> None:
         """
@@ -157,8 +169,8 @@ class MyWindow(QtWidgets.QWidget):
         if answer == QtWidgets.QMessageBox.Yes:
             # Remove note from note_dict.
             button_name = watched.accessibleName()
-            self.note_window.notes_dict.pop(button_name)
-            self.thread.save_json(self.note_window.notes_dict)
+            self.new_note_window.notes_dict.pop(button_name)
+            self.thread.save_json(self.new_note_window.notes_dict)
 
             # Remove note from the button_list and the app.
             note_idx = self.push_button_list.index(watched)

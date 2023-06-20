@@ -1,0 +1,14 @@
+{
+    "note_1": {
+        "create_note_time": "20.06.2023 17:54",
+        "expiry_date": "01.01.2000 00:00",
+        "time_delta": "",
+        "note": "harry\nand I"
+    },
+    "note_2": {
+        "create_note_time": "20.06.2023 17:54",
+        "expiry_date": "01.01.2000 00:00",
+        "time_delta": "",
+        "note": "ron\nlalalalalaa"
+    }
+}
