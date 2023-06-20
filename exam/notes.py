@@ -3,31 +3,30 @@
 
 Обязательные функции в приложении:
 +- * Добавление, изменение, удаление заметок
-+- * Сохранение времени добавления заметки и отслеживание времени до дэдлайна.
++ * Сохранение времени добавления заметки и отслеживание времени до дэдлайна.
 + * Реализация хранения заметок остаётся на ваш выбор (БД, json и т.д.).
 """
 
-from PySide6 import QtWidgets, QtCore
-from PySide6.QtWidgets import QFrame, QPushButton, QPlainTextEdit, QMessageBox, QHBoxLayout, QVBoxLayout
-from PySide6.QtGui import QColor
-import PySide6
-import time
-from typing import Tuple
 import os
-from json_thread import JsonThread
-from new_note import NewNote
+from typing import Tuple
 from functools import partial
-import json
-import pprint
+
+from PySide6 import QtWidgets, QtCore
+from PySide6.QtCore import QEvent, QObject
+from PySide6.QtWidgets import QFrame, QPushButton, QPlainTextEdit, QLabel, QMessageBox, QHBoxLayout, QVBoxLayout
+from PySide6.QtGui import QCloseEvent
+
+from new_note import NewNote
+from json_thread import JsonThread
 
 
 class MyWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.push_button_list = []
-        self.which_button_pressed = None
         self.thread = None
+        self.which_button_pressed = None
+        self.push_button_dict = {}  # {QPushButton: {'label': QLabel, 'layout': QHBoxLayout}}
 
         self.initUi()
         self.initThread()
@@ -41,14 +40,13 @@ class MyWindow(QtWidgets.QWidget):
         :return: None
         """
         self.setWindowTitle('Заметки')
-        self.setMinimumSize(400, 400)
+        self.setMinimumSize(800, 500)
 
         # frame ---------------------------------------------------------------
         self.frameNewNote = QFrame()
         # self.frameNewNote.setMaximumSize(200, 500)
-        self.frameNewNote.setMinimumWidth(200)
+        self.frameNewNote.setMinimumWidth(300)
         self.frameNewNote.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Plain)
-        # self.frameNewNote.setContentsMargins(1, 5, 0, 5)
 
         # pushButton -----------------------------------------------------------
         self.pushButtonCreateNewNote = QPushButton()
@@ -97,7 +95,7 @@ class MyWindow(QtWidgets.QWidget):
         self.pushButtonCreateNewNote.clicked.connect(self.onPushButtonCreateNewNote)
         self.pushButtonSaveChanges.clicked.connect(self.onPushButtonSaveChanges)
         self.new_note_window.new_note_signal.connect(self.newNoteSignalHandle)
-        self.thread.data.connect(lambda x: print(x))  # {'button_1': [-8572, 8, 36], 'button_2': [-8572, 8, 36], 'button_3': [-8572, 8, 36]}
+        self.thread.signal.connect(self.threadSignalHandle)
 
     # slots --------------------------------------------------------------
     def onPushButtonCreateNewNote(self) -> None:
@@ -119,7 +117,10 @@ class MyWindow(QtWidgets.QWidget):
         :param data: Кортеж из заголовка заметки и названия кнопки, которая ассоциируется с этой заметкой
         :return: None
         """
-        note_title, button_name = data  # 'harry', 'note_1'
+        note_title, button_name = data
+
+        label = QLabel()
+        label.setText('')
 
         pushButton = QPushButton()
         pushButton.setMaximumSize(120, 50)
@@ -129,8 +130,35 @@ class MyWindow(QtWidgets.QWidget):
         pushButton.clicked.connect(partial(self.onPushButton, pushButton))
         pushButton.installEventFilter(self)
 
-        self.push_button_list.append(pushButton)
-        self.layoutFrame.addWidget(pushButton, )
+        # self.push_button_dict[pushButton] = label  # {QPushButton: QLabel}  was
+
+        layout = QHBoxLayout()
+        layout.addWidget(pushButton)
+        layout.addWidget(label)
+
+        self.push_button_dict[pushButton] = {'label': label, 'layout': layout}  # {QPushButton: {'label': QLabel, 'layout': QHBoxLayout}}
+        self.layoutFrame.addLayout(layout)
+
+    def threadSignalHandle(self, data) -> None:
+        """
+        Обработка сигнала из потока
+
+        :param data:
+        :return: None
+        """
+        # 20.06.2023 21:20
+        button_name, days, hours, minutes = data
+        is_deadline = list(filter(lambda x: x < 0, [days, hours, minutes]))
+
+        # {QPushButton: {'label': QLabel, 'layout': QHBoxLayout}}
+        try:
+            label = next((dict_['label'] for btn, dict_ in self.push_button_dict.items() if btn.accessibleName() == button_name))
+            if is_deadline:
+                label.setText(f'срок выполнения истек!')
+            else:
+                label.setText(f'дэдлайн через:\n{days} дн. {hours} ч. {minutes} мин')
+        except StopIteration as err:
+            pass
 
     def onPushButton(self, button: QPushButton) -> None:
         """
@@ -139,12 +167,13 @@ class MyWindow(QtWidgets.QWidget):
         :param button: QPushButton
         :return: None
         """
-        print()
         text = self.thread.load_json()
 
         self.plainTextEdit.setPlainText(text[f'{button.accessibleName()}']['note'])
         self.which_button_pressed = button
 
+        import pprint
+        print()
         pprint.pprint(self.new_note_window.notes_dict)
         print()
 
@@ -164,48 +193,51 @@ class MyWindow(QtWidgets.QWidget):
 
         :return: None
         """
+        self.thread.status = False
         answer = QtWidgets.QMessageBox.question(self, "Удаление заметки", "Удалить заметку ?")
 
         if answer == QtWidgets.QMessageBox.Yes:
-            # Remove note from note_dict.
+
+            # Remove note from notes_dict.
             button_name = watched.accessibleName()
             self.new_note_window.notes_dict.pop(button_name)
             self.thread.save_json(self.new_note_window.notes_dict)
 
-            # Remove note from the button_list and the app.
-            note_idx = self.push_button_list.index(watched)
-            self.push_button_list.pop(note_idx)
-            self.layoutFrame.removeWidget(watched)
+            # Remove note from the button_dict.
+            # self.push_button_dict.pop(watched)
+
+            # Remove note from the app.
+            # self.layoutFrame.removeWidget(watched)  # watched = {QPushButton: {'label': QLabel, 'layout': QHBoxLayout}}
+            self.layoutFrame.adoptLayout(self.push_button_dict[watched]['layout'])
 
         elif answer == QtWidgets.QMessageBox.No:
             pass
 
     # events --------------------------------------------------------------
-    def eventFilter(self, watched: PySide6.QtCore.QObject, event: PySide6.QtCore.QEvent) -> bool:
-        if watched in self.push_button_list and event.type() == QtCore.QEvent.Type.MouseButtonPress:
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """
+        Обработка события нажатия правой кнопки мыши для кнопок, которые ассоциируются с заметками
+
+        :param watched: QObject
+        :param event: QEvent
+        :return: bool
+        """
+        if watched in self.push_button_dict and event.type() == QtCore.QEvent.Type.MouseButtonPress:
             if event.button() == QtCore.Qt.MouseButton.RightButton:
-                # self.show_message_question(watched)
-                print(event.button())
+                self.show_message_question(watched)
         return super(MyWindow, self).eventFilter(watched, event)
 
-    # TODO: как корректно закрыть поток ?
-    # 		у меня в потоке есть delay и поэтому поток не реагирует, если я меняю status на False
-    def closeEvent(self, event: PySide6.QtGui.QCloseEvent) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """
+        Обработка события закрытия приложения
+
+        :param event: QCloseEvent
+        :return: None
+        """
         path_ = ''.join([os.path.abspath(os.getcwd()), '/my_notes'])
-        print(path_)
         os.remove(path_)
-        self.thread.status = False
-        self.thread.quit()
+        self.thread.terminate()
 
-        print('close event')
-
-
-# {'button_1': {'create_note_time': '19.06.2023 21:16',
-#               'expiry_date': '01.01.2000 00:00',
-#               'note': 'f'},
-#  'button_2': {'create_note_time': '19.06.2023 21:16',
-#               'expiry_date': '01.01.2000 00:00',
-#               'note': 'y'}}
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication()

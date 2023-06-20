@@ -2,7 +2,6 @@ from datetime import datetime
 
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtWidgets import QDateTimeEdit, QLabel, QPushButton, QPlainTextEdit, QHBoxLayout, QVBoxLayout
-from PySide6.QtGui import QColor
 
 
 class NewNote(QtWidgets.QWidget):
@@ -28,7 +27,7 @@ class NewNote(QtWidgets.QWidget):
         self.plainTextEdit.setMaximumSize(400, 500)
         self.plainTextEdit.setPlaceholderText('Введите текст')
 
-        # dateTimeEdit --------------------------------------------------------
+        # label --------------------------------------------------------
         self.labelExpiryDate = QLabel()
         self.labelExpiryDate.setText('Введите дату окончания')
 
@@ -61,10 +60,10 @@ class NewNote(QtWidgets.QWidget):
         text = self.plainTextEdit.toPlainText()
         new_line_symbol = text.find('\n')
         note_title = text[:new_line_symbol]
-        button_name = f'note_{self.note_id}'  # note_1, note_2
+        button_name = f'note_{self.note_id}'
 
-        current_date = datetime.now().strftime('%d.%m.%Y %H:%M')  # 18.06.2023 15:53
-        expiry_date = self.dateTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm')  # yyyy-MM-dd
+        current_date = datetime.now().strftime('%d.%m.%Y %H:%M')
+        expiry_date = self.dateTimeEdit.dateTime().toString('dd.MM.yyyy hh:mm')
 
         self.notes_dict[button_name] = {'create_note_time': current_date,
                                         'expiry_date': expiry_date,
@@ -81,12 +80,6 @@ class NewNote(QtWidgets.QWidget):
         self.new_note_signal.emit((note_title, button_name))
         self.close()
 
-    # {'note_1': {'create_note_time': '20.06.2023 11:15',
-    #               'expiry_date': '01.01.2000 00:00',
-    #               'note': ''},
-    #  'note_2': {'create_note_time': '20.06.2023 11:15',
-    #               'expiry_date': '01.01.2000 00:00',
-    #               'note': ''}}
 
 if __name__ == '__main__':
     pass
